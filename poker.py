@@ -63,7 +63,6 @@ def dealCard ():
                 if (card.rank == cardRank and card.suit == cardSuit):
                     cardExistsAlready = True
 
-
     dealtCards.append(dealtCard)
     return dealtCard
 
@@ -108,16 +107,18 @@ def dealHands ():
 # score the end of the round to find out which player has the best hand
 def checkHands ():
     for player in players:
-        # cardsToCheck = []
-        # cardsToCheck = cardsToCheck + faceUpCards
-
-        cardsToCheck = copy.copy(faceUpCards)
+        cardsToCheck = copy.deepcopy(faceUpCards)
         
         cardsToCheck.append(player.card1)
         cardsToCheck.append(player.card2)
 
+        # print("\n", cardsToCheck)
+
         highCard = findHighCard(cardsToCheck)
-        print(player.name, "High Card: ", highCard)
+
+        # print(player.name, "High Card: ", highCard)
+
+        findDuplicateRanks(cardsToCheck)
 
 # return the card within "cards" that has the highest rank
 def findHighCard (cards):
@@ -130,6 +131,17 @@ def findHighCard (cards):
             highCardValue = cardValue
             highCard = card
     return highCard
+
+# finds pairs, 3 of a kind, and 4 of a kind
+def findDuplicateRanks (cards):
+    uniqueRanks = {}
+    for card in cards:       
+        if card.rank in list(uniqueRanks):
+            uniqueRanks[card.rank] = uniqueRanks[card.rank] + 1
+        else:
+            uniqueRanks[card.rank] = 1
+    print(uniqueRanks)
+    
 
 # deal hands to all players
 dealHands()
@@ -150,7 +162,7 @@ dealRiver()
 print("\nFace Up Cards:")
 for card in faceUpCards:
     print(card)
-
+print("\n")
 
 
 # print("\nDealt Cards:")
