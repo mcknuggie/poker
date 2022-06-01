@@ -1,5 +1,6 @@
 from gettext import find
 import random, copy
+from re import L
 
 class Card:
   def __init__(self, rank, suit):
@@ -32,6 +33,22 @@ ranks = {
     'Q': 12,
     'K': 13,
     'A': 14
+}
+
+reversed_ranks = {
+    2: '2',
+    3: '3',
+    4: '4',
+    5: '5',
+    6: '6',
+    7: '7',
+    8: '8',
+    9: '9',
+    10: '10',
+    11: 'J',
+    12: 'Q',
+    13: 'K',
+    14: 'A'
 }
 
 suits = [
@@ -118,7 +135,10 @@ def checkHands ():
 
         # print(player.name, "High Card: ", highCard)
 
-        findDuplicateRanks(cardsToCheck)
+        # print(player.name, "Duplicate Ranks:")
+        # findDuplicateRanks(cardsToCheck)
+
+        print(player.name, "Straight Start Card: ", findStraights(cardsToCheck))
 
 # return the card within "cards" that has the highest rank
 def findHighCard (cards):
@@ -141,7 +161,45 @@ def findDuplicateRanks (cards):
         else:
             uniqueRanks[card.rank] = 1
     print(uniqueRanks)
-    
+
+# returns the first card of the highest straight, returns -1 if no staright exists
+def findStraights (cards):
+    myCards = copy.deepcopy(cards) # make a copy so we can edit it
+    # print("myCards: ", myCards)
+    highestStartCard = -1
+
+    for card in myCards:
+        startOfStraight = True
+        if ranks[card.rank] > 10 and ranks[card.rank] != 14: # J, Q, K can't start straight
+            startOfStraight = False
+        else:
+            myCardsRanks = [myCard.rank for myCard in myCards]
+            # print("myCardsRanks: ", myCardsRanks)
+
+            consecutiveCards = 1
+            increment = 1
+
+            while consecutiveCards < 5:
+                # handle case where corresponding rank value exceeds 14
+                if ranks[card.rank] + increment > 14:
+                    nextRank = ranks[card.rank] + increment - 13
+                else:
+                    nextRank = ranks[card.rank] + increment
+
+                # if a card of the next sequential rank exists in list of 7 graded cards
+                if reversed_ranks[nextRank] in myCardsRanks: # *** this if statement must be fixed ***
+                    consecutiveCards += 1
+                    increment += 1
+                # card is not the start of a straight
+                else :
+                    startOfStraight = False
+                    break
+                
+        if startOfStraight == True:
+            if highestStartCard == -1 or ranks[card.rank] > ranks[highestStartCard.rank]:
+                highestStartCard = card
+                
+    return highestStartCard # which can be -1 if no straights were found
 
 # deal hands to all players
 dealHands()
