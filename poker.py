@@ -129,16 +129,20 @@ def checkHands ():
         cardsToCheck.append(player.card1)
         cardsToCheck.append(player.card2)
 
-        # print("\n", cardsToCheck)
+        print(player.name, "Cards in play: ", cardsToCheck)
 
         highCard = findHighCard(cardsToCheck)
 
-        # print(player.name, "High Card: ", highCard)
+        print(player.name, "High Card: ", highCard)
 
-        # print(player.name, "Duplicate Ranks:")
-        # findDuplicateRanks(cardsToCheck)
+        print(player.name, "Duplicate Ranks:")
+        findDuplicateRanks(cardsToCheck)
 
         print(player.name, "Straight Start Card: ", findStraights(cardsToCheck))
+
+        print(player.name, "Flush Cards: ", findFlushes(cardsToCheck))
+
+        print("\n")
 
 # return the card within "cards" that has the highest rank
 def findHighCard (cards):
@@ -164,17 +168,15 @@ def findDuplicateRanks (cards):
 
 # returns the first card of the highest straight, returns -1 if no staright exists
 def findStraights (cards):
-    myCards = copy.deepcopy(cards) # make a copy so we can edit it
-    # print("myCards: ", myCards)
+
     highestStartCard = -1
 
-    for card in myCards:
+    for card in cards:
         startOfStraight = True
         if ranks[card.rank] > 10 and ranks[card.rank] != 14: # J, Q, K can't start straight
             startOfStraight = False
         else:
-            myCardsRanks = [myCard.rank for myCard in myCards]
-            # print("myCardsRanks: ", myCardsRanks)
+            cardsRanks = [myCard.rank for myCard in cards]
 
             consecutiveCards = 1
             increment = 1
@@ -187,19 +189,45 @@ def findStraights (cards):
                     nextRank = ranks[card.rank] + increment
 
                 # if a card of the next sequential rank exists in list of 7 graded cards
-                if reversed_ranks[nextRank] in myCardsRanks: # *** this if statement must be fixed ***
+                if reversed_ranks[nextRank] in cardsRanks: # *** this if statement must be fixed ***
                     consecutiveCards += 1
                     increment += 1
                 # card is not the start of a straight
                 else :
                     startOfStraight = False
                     break
-                
+
+        # check in case there are more than one possible straight
         if startOfStraight == True:
             if highestStartCard == -1 or ranks[card.rank] > ranks[highestStartCard.rank]:
                 highestStartCard = card
                 
     return highestStartCard # which can be -1 if no straights were found
+
+# returns array of cards that make up the flush, returns empty array "[]" if no flush is found
+def findFlushes (cards):
+
+    flushCards = []
+    flushSuit = -1
+
+    suitCounts = {
+        "spades" : 0,
+        "clubs" : 0,
+        "hearts" : 0,
+        "diamonds" : 0
+    }
+
+    for card in cards:
+        suitCounts[card.suit] += 1
+
+    for suit in suitCounts:
+        if suitCounts[suit] >= 5:
+            flushSuit = suit
+            for card in cards:
+                if card.suit == flushSuit:
+                    flushCards.append(card)
+
+    return flushCards
 
 # deal hands to all players
 dealHands()
@@ -221,10 +249,5 @@ print("\nFace Up Cards:")
 for card in faceUpCards:
     print(card)
 print("\n")
-
-
-# print("\nDealt Cards:")
-# for card in dealtCards:
-#     print(card)
 
 checkHands()
