@@ -170,11 +170,11 @@ def findDuplicateRanks (cards):
 def findStraights (cards):
 
     straightCards = []
+    highestStraightCards = []
 
     for card in cards:
-        startOfStraight = True
         if ranks[card.rank] > 10 and ranks[card.rank] != 14: # J, Q, K can't start straight
-            startOfStraight = False
+            continue
         else:
             cardsRanks = [myCard.rank for myCard in cards]
 
@@ -200,15 +200,24 @@ def findStraights (cards):
                     straightCards.append(Card(reversed_ranks[nextRank], nextSuit))
                 # card is not the start of a straight
                 else :
-                    startOfStraight = False
                     straightCards.clear()
                     break
         
         if straightCards: # if it's not empty, then there must be a straight
             straightCards.insert(0,card)
-            return straightCards
 
-    return straightCards # which can be [] if no straights were found
+            # if highestStraightCards is empty
+            if not highestStraightCards:
+                highestStraightCards = copy.deepcopy(straightCards)
+                straightCards.clear()
+
+            # compare the highest value in the straight
+            elif ranks[straightCards[4].rank] > ranks[highestStraightCards[4].rank]:
+                highestStraightCards.clear()
+                highestStraightCards = copy.deepcopy(straightCards)
+                straightCards.clear()
+
+    return highestStraightCards # which can be [] if no straights were found
 
 # returns array of cards that make up the flush, returns empty array "[]" if no flush is found
 def findFlushes (cards):
