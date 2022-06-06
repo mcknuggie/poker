@@ -138,7 +138,7 @@ def checkHands ():
         print(player.name, "Duplicate Ranks:")
         findDuplicateRanks(cardsToCheck)
 
-        print(player.name, "Straight Start Card: ", findStraights(cardsToCheck))
+        print(player.name, "Straight Cards: ", findStraights(cardsToCheck))
 
         print(player.name, "Flush Cards: ", findFlushes(cardsToCheck))
 
@@ -166,10 +166,10 @@ def findDuplicateRanks (cards):
             uniqueRanks[card.rank] = 1
     print(uniqueRanks)
 
-# returns the first card of the highest straight, returns -1 if no staright exists
+# returns the array of cards that make up the straight, returns empty array "[]" if no straight is found
 def findStraights (cards):
 
-    highestStartCard = -1
+    straightCards = []
 
     for card in cards:
         startOfStraight = True
@@ -189,20 +189,26 @@ def findStraights (cards):
                     nextRank = ranks[card.rank] + increment
 
                 # if a card of the next sequential rank exists in list of 7 graded cards
-                if reversed_ranks[nextRank] in cardsRanks: # *** this if statement must be fixed ***
+                if reversed_ranks[nextRank] in cardsRanks:
+
+                    for theCard in cards:
+                        if theCard.rank == reversed_ranks[nextRank]:
+                            nextSuit = theCard.suit
+
                     consecutiveCards += 1
                     increment += 1
+                    straightCards.append(Card(reversed_ranks[nextRank], nextSuit))
                 # card is not the start of a straight
                 else :
                     startOfStraight = False
+                    straightCards.clear()
                     break
+        
+        if straightCards: # if it's not empty, then there must be a straight
+            straightCards.insert(0,card)
+            return straightCards
 
-        # check in case there are more than one possible straight
-        if startOfStraight == True:
-            if highestStartCard == -1 or ranks[card.rank] > ranks[highestStartCard.rank]:
-                highestStartCard = card
-                
-    return highestStartCard # which can be -1 if no straights were found
+    return straightCards # which can be [] if no straights were found
 
 # returns array of cards that make up the flush, returns empty array "[]" if no flush is found
 def findFlushes (cards):
