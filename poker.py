@@ -11,13 +11,20 @@ class Card:
       return "%s of %s" % (self.rank, self.suit)
 
 class Player:
-    def __init__(self, name, card1, card2):
+    def __init__(self, name, card1, card2, bestHand, handScore):
       self.name = name
       self.card1 = card1
       self.card2 = card2
+      self.bestHand = bestHand
+      self.handScore = handScore
 
     def __repr__(self): 
-        return "%s: \ncard 1: %s \ncard 2: %s" % (self.name, self.card1, self.card2)
+        return "%s: \ncard 1: %s \ncard 2: %s. \nBest Hand: %s" % (self.name, self.card1, self.card2, self.bestHand)
+
+class Hand:
+    def __init__(self, type, cards):
+        self.type = type
+        self.cards = cards
 
 ranks = {
     '2': 2,
@@ -119,9 +126,28 @@ def dealHands ():
         card1 = dealCard()
         card2 = dealCard()
         playerName = "Player " + str(x + 1)
-        players.append(Player(playerName, card1, card2))
+        playerHand = Hand("", []) # create hand for every player, but intialize them to nothing b/c we don't know their hand yet
+        handScore = 0
+        players.append(Player(playerName, card1, card2, playerHand, handScore))
 
 # score the end of the round to find out which player has the best hand
+"""
+Hand-Ranking Hierarchy:
+
+9 : Royal Flush
+8 : Straight Flush
+7 : 4 of a kind
+6 : Full House
+5 : Flush
+4 : Straight
+3 : 3 of a kind
+2 : 2 Pair
+1 : Pair
+0 : High Card
+
+"""
+
+
 def checkHands ():
     for player in players:
         cardsToCheck = copy.deepcopy(faceUpCards)
@@ -131,17 +157,130 @@ def checkHands ():
 
         print(player.name, "Cards in play: ", cardsToCheck)
 
-        highCard = findHighCard(cardsToCheck)
 
-        print(player.name, "High Card: ", highCard)
+        duplicateRanks = findDuplicateRanks(cardsToCheck)
+        print(player.name, "Duplicate Ranks:", duplicateRanks)
 
-        print(player.name, "Duplicate Ranks:")
-        findDuplicateRanks(cardsToCheck)
+        if 4 in list(duplicateRanks.values()): # if there is four of a kind
+            player.handScore = 7
+            cardRank = list(duplicateRanks.keys())[list(duplicateRanks.values()).index(4)]
+            player.bestHand.cards = [Card(cardRank, "spades"), Card(cardRank, "clubs"), Card(cardRank, "hearts"), Card(cardRank, "diamonds")]
+            player.bestHand.type = "Four of a Kind"
+        elif 3 in list(duplicateRanks.values()): # if there is three of a kind
+            player.handScore = 3
+            threeOfAKindRank = list(duplicateRanks.keys())[list(duplicateRanks.values()).index(3)]
+            player.bestHand.cards.clear()
+            for card in cardsToCheck:
+                if card.rank == threeOfAKindRank:
+                    player.bestHand.cards.append(card)  
+            player.bestHand.type = "Three of a Kind"
+            if 2 in list(duplicateRanks.values()): # if there is a full house
+                player.handScore = 6
+                player.bestHand.type = "Full House"
+                maxRank = '2'
+                if list(duplicateRanks.values()).count(2) == 2: # if there are two pairs within the full house
+                    for currRank, count in duplicateRanks.items():
+                        if count == 2:
+                            if ranks[currRank] > ranks[maxRank]:
+                                maxRank = currRank
+                    for card in cardsToCheck:
+                        if card.rank == maxRank:
+                            player.bestHand.cards.append(card)
+                else: # if there is only one pair within the full house
+                    # first find the rank of the pair and store in pairRank
+                    for currRank, count in duplicateRanks.items():
+                        if count == 2:
+                            pairRank = currRank
+                    # then store all cards in cardsToCheck into the player's bestHand
+                    for card in cardsToCheck:
+                        if card.rank == pairRank:
+                            player.bestHand.cards.append(card)
 
-        print(player.name, "Straight Cards: ", findStraights(cardsToCheck))
+        elif 2 in list(duplicateRanks.values()): # if there is a pair
+            player.handScore = 1
+            player.bestHand.type = "Pair"
+            # iterate through dictionary and count how many pairs there are
+            pairRanks = []
+            for rank, count in duplicateRanks.items():
+                if count == 2:
+                    pairRanks.append(rank)
 
-        print(player.name, "Flush Cards: ", findFlushes(cardsToCheck))
+            if len(pairRanks) == 2: # if there are exactly 2 pairs
+                player.handScore = 2
+                player.bestHand.type = "Two Pair"
+                for card in cardsToCheck:
+                    for rank in pairRanks:
+                        if rank == card.rank:
+                            player.bestHand.cards.append(card)
 
+            elif len(pairRanks) == 3: # if there are exactly 3 pairs
+                player.handScore = 2
+                player.bestHand.type = "Two Pair"
+
+                minRank = pairRanks[0]
+                for currRank in pairRanks:
+                    if ranks[currRank] < ranks[minRank]:
+                        minRank = currRank
+                # now remove the smallest rank
+                pairRanks.remove(minRank)
+                # now that we have only 2 ranks, we can find that two-pair in cardsToCheck
+                for card in cardsToCheck:
+                    for rank in pairRanks:
+                        if rank == card.rank:
+                            player.bestHand.cards.append(card)
+
+            else: # if there is really only one pair
+                player.bestHand.cards.clear()
+                for card in cardsToCheck:
+                    if card.rank == pairRanks[0]:
+                        player.bestHand.cards.append(card)
+
+        straightCards = findStraights(cardsToCheck)
+        print(player.name, "Straight Cards: ", straightCards)
+        hasStraight = False
+
+        if len(straightCards) == 5 and player.handScore < 4: # if there is a straight
+                player.handScore = 4
+                player.bestHand.cards = straightCards
+                player.bestHand.type = "Straight"
+                hasStraight = True
+
+
+
+
+        flushCards = findFlushes(cardsToCheck)
+        print(player.name, "Flush Cards: ", flushCards)
+
+        if len(flushCards) == 5 and player.handScore < 5: # if there is a flush
+            player.handScore = 5
+            player.bestHand.cards = flushCards
+            player.bestHand.type = "Flush"
+            if hasStraight == True:
+                # now need to check is straight cards are the same as the flush cards
+                if set(flushCards) == set(straightCards): # if there is a straight flush
+                    player.handScore = 8
+                    player.bestHand.type = "Straight Flush"
+                    for straightFlushCard in straightCards:
+                        player.bestHand.cards.append(straightFlushCard)
+
+                    flushRanks = []
+                    for card in flushCards:
+                        flushRanks.append(card.rank)
+                    if set(['10', 'J', 'Q', 'K', 'A']).issubset(flushRanks): # if there is a royal flush
+                        player.handScore = 9
+                        player.bestHand.type = "Royal Flush"
+
+        if player.handScore == 0:
+            player.bestHand.type = "High Card"
+            highCard = findHighCard(cardsToCheck)
+            player.bestHand.cards.clear()
+            player.bestHand.cards.append(highCard)
+            # print(player.name, "High Card: ", highCard)
+                
+
+        print("Hand Score: ", player.handScore)
+        print("Best Hand Type: ", player.bestHand.type)
+        print("Best Hand Cards: ", player.bestHand.cards)
         print("\n")
 
 # return the card within "cards" that has the highest rank
@@ -164,7 +303,9 @@ def findDuplicateRanks (cards):
             uniqueRanks[card.rank] = uniqueRanks[card.rank] + 1
         else:
             uniqueRanks[card.rank] = 1
-    print(uniqueRanks)
+    return uniqueRanks
+
+
 
 # returns the array of cards that make up the straight, returns empty array "[]" if no straight is found
 def findStraights (cards):
@@ -243,6 +384,9 @@ def findFlushes (cards):
                     flushCards.append(card)
 
     return flushCards
+
+
+# FUNCTION CALLS
 
 # deal hands to all players
 dealHands()
