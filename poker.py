@@ -26,6 +26,9 @@ class Hand:
         self.type = type
         self.cards = cards
 
+    def __repr__(self):
+        return "%s: %s" % (self.type, self.cards)
+
 ranks = {
     '2': 2,
     '3': 3,
@@ -130,7 +133,7 @@ def dealHands ():
         handScore = 0
         players.append(Player(playerName, card1, card2, playerHand, handScore))
 
-# score the end of the round to find out which player has the best hand
+
 """
 Hand-Ranking Hierarchy:
 
@@ -147,7 +150,7 @@ Hand-Ranking Hierarchy:
 
 """
 
-
+# Grade each player's hand according to the rules of Texas Hold-Em. Assign each player's hand a type (name), score, and list of cards that makeup that hand.
 def checkHands ():
     for player in players:
         cardsToCheck = copy.deepcopy(faceUpCards)
@@ -275,13 +278,22 @@ def checkHands ():
             highCard = findHighCard(cardsToCheck)
             player.bestHand.cards.clear()
             player.bestHand.cards.append(highCard)
-            # print(player.name, "High Card: ", highCard)
                 
-
+        # Finally - print out the results of checkHands
         print("Hand Score: ", player.handScore)
         print("Best Hand Type: ", player.bestHand.type)
         print("Best Hand Cards: ", player.bestHand.cards)
         print("\n")
+
+# Gets called after checkHands and uses that result to determine who won the round of Hold-em and with what hand.
+def findWinner ():
+    bestScore = players[0].handScore
+    winner = players[0]
+    for player in players:
+        if player.handScore > bestScore:
+            bestScore = player.handScore
+            winner = player
+    return winner
 
 # return the card within "cards" that has the highest rank
 def findHighCard (cards):
@@ -391,9 +403,12 @@ def findFlushes (cards):
 # deal hands to all players
 dealHands()
 
+# printing white space for formatting
+print("\n")
+
 # print all player hands
 for player in players:
-    print(player)
+    print(player.name, ":\nCard 1: ", player.card1, "\nCard 2: ", player.card2, "\n")
 
 # deal a flop
 dealFlop()
@@ -404,9 +419,11 @@ dealTurn()
 # deal a river
 dealRiver()
 
-print("\nFace Up Cards:")
-for card in faceUpCards:
-    print(card)
-print("\n")
+print("Face Up Cards:", faceUpCards, "\n")
 
 checkHands()
+
+winnerPlayer = findWinner()
+
+print("Winner:", winnerPlayer.name)
+print(winnerPlayer.bestHand, "\n")
